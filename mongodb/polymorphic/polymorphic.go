@@ -37,6 +37,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer client.Disconnect(context.Background())
 
 	// Verify that the connection was successful
 	err = client.Ping(context.Background(), nil)

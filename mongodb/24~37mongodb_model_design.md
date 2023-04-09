@@ -2,6 +2,10 @@
 
 ## Polymorphic Pattern
 
+### Introduction
+
+MongoDB’s polymorphic schema allows for storing different types of documents in the same collection and adding new types of documents without affecting existing ones.
+
 ### Pros and Cons
 
 Pros
