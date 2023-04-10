@@ -7,14 +7,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 )
 
 // Product struct represents a product in a store
 type Product struct {
-	ID      primitive.ObjectID `bson:"_id,omitempty"`
-	Name    string             `bson:"name,omitempty"`
-	Price   float64            `bson:"price,omitempty"`
-	Reviews []Review           `bson:"reviews,omitempty"`
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	Name     string             `bson:"name,omitempty"`
+	Price    float64            `bson:"price,omitempty"`
+	Reviews1 []Review           `bson:"reviews1,omitempty"`
+	Reviews2 []Review           `bson:"reviews2,omitempty"`
 }
 
 // Review represents a customer review of a product type Review
@@ -43,6 +45,16 @@ func main() {
 		ID:    primitive.NewObjectID(),
 		Name:  "iPhone 12",
 		Price: 799.99,
+		Reviews1: []Review{
+			{
+				Rating:  5,
+				Comment: "highly recommend!",
+			},
+			{
+				Rating:  5,
+				Comment: "it easy to read and watch videos.",
+			},
+		},
 	}
 	// productResult is a variable that holds the result of inserting the product into the productCollection
 	productResult, err := productCollection.InsertOne(context.Background(), product)
@@ -78,36 +90,63 @@ func main() {
 	}
 	fmt.Println("IDs of the inserted product reviews", reviewResult.InsertedIDs)
 
-	//
-	productCollection.UpdateOne(
+	// Update one document in the productCollection
+	_, err = productCollection.UpdateOne(
 		context.Background(),
 		// bson.M is a map that specifies the filter condition for finding the product by its ID
 		bson.M{"_id": product.ID},
 		// bson.D is a slice of key-value pairs that specifies the update operation to set the reviews field to a slice of Review structs
 		bson.D{
 			{"$set", bson.D{{"reviews", []Review{review1, review2, review3}}}},
-			{"$push", bson.D{{"review_ids", bson.D{{"$each", reviewResult.InsertedIDs}}}}},
 		},
 	)
-
-	// 查詢產品
-	var result Product
-	err = productCollection.FindOne(context.Background(), bson.M{"_id": product.ID}).Decode(&result)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(result)
 
-	pipeline := mongo.Pipeline{{{"$lookup", bson.D{{"from", "reviews"}, {"localField", "review_ids"}, {"foreignField", "_id"}, {"as", "reviews"}}}}}
+	// pipeline is a variable that holds an aggregation pipeline to join the products and reviews collections
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.D{{"_id", product.ID}}}}, // match the product by ID
+		{{"$lookup", bson.D{ // lookup the reviews by product ID
+			{"from", "reviews"},
+			{"localField", "_id"},
+			{"foreignField", "product_id"},
+			{"as", "reviews2"},
+		}}},
+	}
+
+	// cursor is a variable that holds the result of running the aggregation pipeline on the productCollection
 	cursor, err := productCollection.Aggregate(context.Background(), pipeline)
 	if err != nil {
 		panic(err)
 	}
 	defer cursor.Close(context.Background())
 
-	var products []Product
-	if err = cursor.All(context.Background(), &products); err != nil {
-		panic(err)
+	// Iterate over the cursor and print out each product with its reviews
+	for cursor.Next(context.Background()) {
+		var p Product
+		err := cursor.Decode(&p)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("Product:", p.Name, "Price:", p.Price)
+		fmt.Println("Reviews1:")
+		for _, r := range p.Reviews1 {
+			fmt.Println("Rating:", r.Rating, "Comment:", r.Comment)
+		}
+		fmt.Println("Reviews2:")
+		for _, r := range p.Reviews2 {
+			fmt.Println("Rating:", r.Rating, "Comment:", r.Comment)
+		}
 	}
-	fmt.Println(products)
+
+	// Drop the collection to clean up the data
+	err = productCollection.Drop(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = reviewCollection.Drop(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
 }
