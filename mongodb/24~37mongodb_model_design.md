@@ -640,15 +640,43 @@ Rating: 3 Comment: Battery life could be better.
 */
 ```
 
+## Bucket Pattern
+
+### Introduction
+
+
+
+```bash
+```
 
 
 
 
 
+### Use bucket Index
 
 
 
+```bash
 
+$ mongosh
+
+$ use test
+
+$ db.createCollection("products")
+
+$ for (let i = 1; i <= 1000; i++) {
+   db.products.insertOne({
+      name: "product" + i,
+      price: Math.floor(Math.random() * 1000)   //随机价格1-1000
+   })
+}
+
+$ db.products.createIndex(
+   { price: 1 }, 
+   { bucketSize: 50 }
+)  
+```
 
 
 
