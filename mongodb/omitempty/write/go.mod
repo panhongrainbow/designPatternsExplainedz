@@ -1,4 +1,4 @@
-module github.com/panhongrainbow/designPatternsExplainedz/mongodb/omitempty
+module github.com/panhongrainbow/designPatternsExplainedz/mongodb/omitempty/write
 
 go 1.20
 

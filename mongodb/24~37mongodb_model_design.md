@@ -1,5 +1,33 @@
 # MongoDB Model Design
 
+## Omitempty 
+
+### Features
+
+> 1. It's important to note that `the omitempty option` only works with `empty values, which are defined as false, 0, a nil pointer, a nil interface, or an empty array or slice`. 
+> 2. If a field has a non-empty value, it will be included in the encoding regardless of whether omitempty is used or not.
+>
+> > Here's a [link](https://jira.mongodb.org/browse/GODRIVER-1229)
+> > ![image-20230428112458139](../assets/image-20230428112458139.png)
+
+
+
+In MongoDB, default values are `different` for some Golang types. (MongoDB 有 null，Golang 有 nil)
+
+These types include `pointers, slices, maps, and structs` in Golang.
+
+The default values may be `unknown`. (未知的数值写入)
+
+Using omitempty can avoid filling in `MongoDB's default values` and directly get zero or empty values.
+
+(for example, sometimes the default value is `NULL` and it is not known `what it is`).
+
+(2023/4/28)
+
+### Usage rules
+
+(empty)
+
 ## Polymorphic Pattern
 
 ### Introduction
