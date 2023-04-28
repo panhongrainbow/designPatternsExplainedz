@@ -672,21 +672,81 @@ Rating: 3 Comment: Battery life could be better.
 
 ### Introduction
 
+The `$bucket aggregation` operator in MongoDB implements basic bucketing.
+It allows us to `assign documents to buckets within user-defined ranges`.
+This enables us to classify and group documents. 
 
+### Pros and Cons
+
+Pros:
+
+- It groups the data and the output is clear.
+- The "other" option can capture data that does not match. This allows for further analysis.
+
+Cons:
+
+- $bucket currently only supports grouping by numeric or date fields that can be sorted. It cannot group by other field types.
+- It cannot specify the exact number of groups. For example, it cannot identify the top 10% highest incomes nationwide.
+
+>Source:
+>
+>[bucket (aggregation)](https://www.mongodb.com/docs/manual/reference/operator/aggregation/bucket/) 
+>
+><img src="/home/panhong/go/src/github.com/panhongrainbow/note/typora-user-images/image-20230428200129660.png" alt="image-20230428200129660" style="zoom:80%;" /> 
+>
+><img src="/home/panhong/go/src/github.com/panhongrainbow/note/typora-user-images/image-20230428200340190.png" alt="image-20230428200340190" style="zoom:80%;" /> 
+>
+>(里面有说要升序)
+
+### Operation
+
+> [bucket (example)](https://mongodb.net.cn/manual/reference/operator/aggregation/bucket/)
 
 ```bash
+$ db.artists.insertMany([
+  { "_id" : 1, "last_name" : "Bernard", "first_name" : "Emil", "year_born" : 1868, "year_died" : 1941, "nationality" : "France" },
+  { "_id" : 2, "last_name" : "Rippl-Ronai", "first_name" : "Joszef", "year_born" : 1861, "year_died" : 1927, "nationality" : "Hungary" },
+  { "_id" : 3, "last_name" : "Ostroumova", "first_name" : "Anna", "year_born" : 1871, "year_died" : 1955, "nationality" : "Russia" },
+  { "_id" : 4, "last_name" : "Van Gogh", "first_name" : "Vincent", "year_born" : 1853, "year_died" : 1890, "nationality" : "Holland" },
+  { "_id" : 5, "last_name" : "Maurer", "first_name" : "Alfred", "year_born" : 1868, "year_died" : 1932, "nationality" : "USA" },
+  { "_id" : 6, "last_name" : "Munch", "first_name" : "Edvard", "year_born" : 1863, "year_died" : 1944, "nationality" : "Norway" },
+  { "_id" : 7, "last_name" : "Redon", "first_name" : "Odilon", "year_born" : 1840, "year_died" : 1916, "nationality" : "France" },
+  { "_id" : 8, "last_name" : "Diriks", "first_name" : "Edvard", "year_born" : 1855, "year_died" : 1930, "nationality" : "Norway" }
+])
+
+$ db.artists.aggregate( [
+  // First Stage
+  {
+    $bucket: {
+      groupBy: "$year_born",                        // Field to group by
+      boundaries: [ 1840, 1850, 1860, 1870, 1880 ], // Boundaries for the buckets
+      default: "Other",                             // Bucket id for documents which do not fall into a bucket
+      output: {                                     // Output for each bucket
+        "count": { $sum: 1 },
+        "artists" :
+          {
+            $push: {
+              "name": { $concat: [ "$first_name", " ", "$last_name"] },
+              "year_born": "$year_born"
+            }
+          }
+      }
+    }
+  },
+  // Second Stage
+  {
+    $match: { count: {$gt: 3} }
+  }
+] )
 ```
 
-
-
-
+(2023/4/28)
 
 ### Use bucket Index
 
-
+(empyt)
 
 ```bash
-
 $ mongosh
 
 $ use test
@@ -696,19 +756,20 @@ $ db.createCollection("products")
 $ for (let i = 1; i <= 1000; i++) {
    db.products.insertOne({
       name: "product" + i,
-      price: Math.floor(Math.random() * 1000)   //随机价格1-1000
+      price: Math.floor(Math.random() * 1000) # Random price between 1-1000 
    })
 }
 
 $ db.products.createIndex(
-   { price: 1 }, 
-   { bucketSize: 50 }
-)  
+   { price: 1 }
+)
 ```
 
+## Bucket Sort
 
+Check later
 
-
+https://www.jianshu.com/p/ec883259d718
 
 
 
